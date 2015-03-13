@@ -1,5 +1,6 @@
 import os
 
+from fabric.context_managers import settings
 from fabric.decorators import task
 from fabric.state import env
 from fabric.utils import indent
@@ -168,14 +169,27 @@ def generate_nginx_conf(role='www'):
         'ssl': blueprint.get('web.ssl', False),
         'ip_hash': blueprint.get('web.ip_hash', False)
     }
-    template = 'nginx/site.conf'
+
+    template = blueprint.get('web.nginx_conf')
+
+    if template is None:
+        template = 'nginx/site.conf'
+    else:
+        template = 'nginx/{}.conf'.format(template)
+
     web_provider = blueprint.get('web.provider')
     if web_provider and web_provider == 'uwsgi':
         template = 'nginx/uwsgi_site.conf'
-    conf = blueprint.render_template(template, context)
-    conf_dir = os.path.join(os.path.dirname(env['real_fabfile']), 'templates', role, 'nginx',
-                            'sites-available')
-    conf_path = os.path.join(conf_dir, '{}.conf'.format(name))
+
+    with settings(template_dirs=['templates']):
+        conf = blueprint.render_template(template, context)
+        conf_dir = os.path.join(
+            os.path.dirname(env['real_fabfile']),
+            'templates',
+            role,
+            'nginx',
+            'sites-available')
+        conf_path = os.path.join(conf_dir, '{}.conf'.format(name))
 
     if not os.path.exists(conf_dir):
         os.makedirs(conf_dir)

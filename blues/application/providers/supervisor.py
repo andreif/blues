@@ -3,7 +3,7 @@ import os
 from fabric.context_managers import settings
 from fabric.state import env
 
-from .base import BaseProvider
+from .base import BaseManager
 from ..project import *
 
 from ... import debian
@@ -11,7 +11,8 @@ from ... import supervisor
 from ...app import blueprint
 
 
-class SupervisorProvider(BaseProvider):
+class SupervisorProvider(BaseManager):
+    name = 'supervisor'
 
     def install(self):
         """
@@ -30,49 +31,26 @@ class SupervisorProvider(BaseProvider):
         debian.mkdir(destination)
         return destination
 
-    def configure_web(self):
-        """
-        TODO: Render and upload web program to projects Supervisor home dir.
+    def configure_provider(self, provider, context, program_name=None):
+        if program_name is None:
+            program_name = provider.name
 
-        :return: Updated programs
-        """
-        raise NotImplementedError('Supervisor provider not yet implements web workers.')
+        context.update({'program_name': program_name})
 
-    def configure_worker(self):
-        """
-        Render and upload worker program(s) to projects Supervisor home dir.
-
-        :return: Updated programs
-        """
         destination = self.get_config_path()
-        context = super(SupervisorProvider, self).get_context()
-        context.update({
-            'workers': blueprint.get('worker.workers', debian.nproc()),
-        })
+        template = os.path.join(provider.name, self.name, provider.name)
+        default_templates = supervisor.blueprint.get_default_template_root()
 
-        # Override context defaults with blueprint settings
-        context.update(blueprint.get('worker'))
+        with settings(template_dirs=[default_templates]):
+            uploads = blueprint.upload(
+                template,
+                os.path.join(destination,
+                             '{}.conf'.format(program_name)),
+                context=context)
 
-        # Filter program extensions by host
-        programs = ['celery.conf']
-        extensions = blueprint.get('worker.celery.extensions')
-        if isinstance(extensions, list):
-            # Filter of bad values
-            extensions = [extension for extension in extensions if extension]
-            for extension in extensions:
-                programs.append('{}.conf'.format(extension))
-        elif isinstance(extensions, dict):
-            for extension, extension_host in extensions.items():
-                if extension_host in ('*', env.host_string):
-                    programs.append('{}.conf'.format(extension))
+        self.updates.extend(uploads)
 
-        # Upload programs
-        for program in programs:
-            template = os.path.join('supervisor', 'default', program)
-            default_templates = supervisor.blueprint.get_default_template_root()
-            with settings(template_dirs=[default_templates]):
-                uploads = blueprint.upload(template, destination, context=context)
-            self.updates.extend(uploads)
+        self.reload()
 
         return self.updates
 

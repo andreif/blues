@@ -1,5 +1,3 @@
-from .uwsgi import UWSGIProvider
-from .supervisor import SupervisorProvider
 from ...app import blueprint
 
 
@@ -10,12 +8,38 @@ def get_provider(name):
     :param name: Provider name (blueprint)
     :return: <provider>
     """
-    if name == 'uwsgi':
+    from .uwsgi import UWSGIProvider
+    from .supervisor import SupervisorProvider
+    from .gunicorn import GunicornProvider
+    from .celery import CeleryProvider
+
+    provider, _, manager = name.partition(':')
+
+    # LEGACY
+    if provider == 'uwsgi':
+        # Special, for now
         return UWSGIProvider()
-    elif name == 'supervisor':
-        return SupervisorProvider()
+
+    if provider == 'supervisor':
+        provider = 'celery'
+        manager = 'supervisor'
+    # END LEGACY
+
+    if provider == 'celery':
+        return CeleryProvider(manager=manager)
+    elif provider == 'gunicorn':
+        return GunicornProvider(manager=manager)
     else:
         raise NotImplementedError('"{}" is not a valid application provider'.format(name))
+
+
+def get_manager(name):
+    from .supervisor import SupervisorProvider as SupervisorManager
+
+    if name == 'supervisor':
+        return SupervisorManager()
+    else:
+        raise NotImplementedError('"{}" is not a valid manager'.format(name))
 
 
 def get_providers(host=None):

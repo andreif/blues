@@ -5,9 +5,10 @@ from ..project import *
 from ... import debian
 from ...app import blueprint
 
+from . import get_manager
+
 
 class BaseProvider(object):
-
     def __init__(self):
         self.updates = []
         self.project = blueprint.get('project')
@@ -65,3 +66,32 @@ class BaseProvider(object):
         """
         pass
 
+
+class ManagedProvider(BaseProvider):
+    def __init__(self, manager=None, *args, **kw):
+        super(ManagedProvider, self).__init__(*args, **kw)
+
+        if not hasattr(self, 'default_manager'):
+            raise AttributeError('%s has no default_manager attribute.' %
+                                 self.__class__)
+
+        if manager is None:
+            manager = self.default_manager
+
+        self.manager = get_manager(manager)
+
+
+class BaseManager(BaseProvider):
+    def configure_provider(self, provider, context, program_name=None):
+        """
+        This method is called from providers in order to upload their
+        run configuration to the manager.
+        :param provider: The provider's instance
+        :param context: Template context
+        :param program_name: Optional program name, to avoid collisions if
+        you have multiple instances of the same provider running under the
+        same manager.
+        :return:
+        """
+        raise NotImplementedError('managers usually need to implement a '
+                                  'configure_provider method.')

@@ -132,7 +132,9 @@ def enable(site, do_reload=True):
     :return: Got enabled?
     """
     enabled = False
-    site = site if site.endswith('.conf') or site == 'default' else '{}.conf'.format(site)
+
+    if not (site.endswith('.conf') or site == 'default'):
+        site = '{}.conf'.format(site)
 
     with sudo():
         available_site = os.path.join(sites_available_path, site)
