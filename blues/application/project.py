@@ -2,14 +2,16 @@ import os
 from contextlib import contextmanager
 
 from refabric.context_managers import sudo
+from refabric.contrib import blueprints
 
 from .. import git
-from ..app import blueprint
 
 __all__ = [
     'app_root', 'project_home', 'git_root', 'virtualenv_path', 'git_repository',
     'git_repository_path', 'python_path', 'sudo_project', 'requirements_txt'
 ]
+
+blueprint = blueprints.get('app')
 
 
 app_root = lambda: blueprint.get('root_path') or '/srv/app'  # /srv/app
@@ -20,6 +22,7 @@ git_repository = lambda: git.parse_url(blueprint.get('git_url'), branch=blueprin
 git_repository_path = lambda: os.path.join(git_root(), git_repository()['name'])  # /srv/app/project/src/repo.git
 python_path = lambda: os.path.join(git_repository_path(), blueprint.get('git_source', 'src'))  # /srv/app/project/src/repo.git
 requirements_txt = lambda: os.path.join(git_repository_path(), blueprint.get('requirements', 'requirements.txt'))  # /srv/app/project/src/repo.git/requirements.txt
+project_name = lambda: blueprint.get('project')
 
 
 @contextmanager

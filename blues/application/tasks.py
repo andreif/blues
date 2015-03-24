@@ -6,15 +6,19 @@ from fabric.state import env
 from fabric.utils import indent
 
 from refabric.utils import info
+from refabric.contrib import blueprints
 
-from .deploy import *
-from .project import *
-from .providers import get_providers
 
 from .. import git
-from ..app import blueprint
+
+blueprint = blueprints.get('app')
 
 __all__ = []
+
+
+def get_providers(*args, **kw):
+    from .providers import get_providers as real
+    return real(*args, **kw)
 
 
 @task
@@ -22,13 +26,14 @@ def setup():
     """
     Install project user, structure, env, source, dependencies and providers
     """
-    install_project_structure()
-    install_project_user()
-    install_system_dependencies()
-    install_or_update_source()
+    from .deploy import install_project, install_virtualenv, \
+        install_requirements, install_providers
+
+    install_project()
     install_virtualenv()
     install_requirements()
     install_providers()
+
     configure_providers()
 
 
@@ -48,6 +53,9 @@ def deploy(auto_reload=True, force=False):
 
     :return: Got new source?
     """
+    from .deploy import update_source, install_requirements
+    from .project import git_repository_path
+
     # Reset git repo
     previous_commit, current_commit = update_source()
     code_changed = current_commit is not None and previous_commit != current_commit
@@ -59,14 +67,17 @@ def deploy(auto_reload=True, force=False):
         if not force:
             # Check if requirements has changed
             commit_range = '{}..{}'.format(previous_commit, current_commit)
-            requirements_changed, _, _ = git.diff_stat(git_repository_path(), commit_range, requirements)
+            requirements_changed, _, _ = git.diff_stat(git_repository_path(),
+                                                       commit_range,
+                                                       requirements)
 
         # Install repo requirements.txt
         info('Install requirements {}', requirements)
         if requirements_changed or force:
             install_requirements()
         else:
-            info(indent('(requirements not changed in {}...skipping)'), commit_range)
+            info(indent('(requirements not changed in {}...skipping)'),
+                 commit_range)
 
         if auto_reload:
             reload()
@@ -79,12 +90,15 @@ def deployed():
     """
     Show deployed and last origin commit
     """
+    from .project import sudo_project, git_repository_path
+
     with sudo_project():
         repository_path = git_repository_path()
         git.fetch(repository_path)
 
         head_commit, head_message = git.log(repository_path)[0]
-        origin_commit, origin_message = git.log(repository_path, commit='origin')[0]
+        origin_commit, origin_message = git.log(repository_path,
+                                                commit='origin')[0]
 
         info('Deployed commit: {} - {}', head_commit[:7], head_message)
         if head_commit == origin_commit:
@@ -130,6 +144,8 @@ def configure_providers(force_reload=False):
     """
     Render, upload and reload web & worker config
     """
+    from .project import sudo_project
+
     with sudo_project():
         providers = get_providers(env.host_string)
         if 'web' in providers:

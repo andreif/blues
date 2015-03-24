@@ -1,4 +1,6 @@
-from ...app import blueprint
+from refabric.contrib import blueprints
+
+blueprint = blueprints.get('app')
 
 
 def get_provider(name):
@@ -51,17 +53,23 @@ def get_providers(host=None):
     """
     providers = {}
 
+    # TODO: TEST! TEST! TEST! NEEDS TESTING!, rewrote host filtering.
+
     web_hosts = blueprint.get('web.hosts')
     # Filter out bad values
-    web_hosts = [host for host in web_hosts if host]
+    web_hosts = filter(lambda x: x, web_hosts)
     web_provider = blueprint.get('web.provider')
+
     if web_provider:
         providers[web_provider] = get_provider(web_provider)
 
+    # Install worker providers
     worker_hosts = blueprint.get('worker.hosts')
+
     # Filter out bad values
-    worker_hosts = [host for host in worker_hosts if host]
+    worker_hosts = filter(lambda x: x, worker_hosts)
     worker_provider = blueprint.get('worker.provider')
+
     if worker_provider and worker_provider not in providers:
         providers[worker_provider] = get_provider(worker_provider)
 

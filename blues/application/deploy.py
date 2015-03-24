@@ -6,8 +6,8 @@ from fabric.utils import indent, abort
 
 from refabric.context_managers import sudo
 from refabric.utils import info
+from refabric.contrib import blueprints
 
-from .project import *
 from .providers import get_providers
 
 from .. import debian
@@ -15,10 +15,29 @@ from .. import git
 from .. import user
 from .. import python
 from .. import virtualenv
-from ..app import blueprint
 
-__all__ = ['install_project_user', 'install_project_structure', 'install_system_dependencies', 'install_virtualenv',
-           'install_requirements', 'install_or_update_source', 'install_source', 'update_source', 'install_providers']
+__all__ = [
+    'install_project',
+    'install_project_user',
+    'install_project_structure',
+    'install_system_dependencies',
+    'install_virtualenv',
+    'install_requirements',
+    'install_or_update_source',
+    'install_source',
+    'update_source',
+    'install_providers'
+]
+
+
+blueprint = blueprints.get('app')
+
+
+def install_project():
+    install_project_user()
+    install_project_structure()
+    install_system_dependencies()
+    install_or_update_source()
 
 
 def install_project_user():
@@ -28,6 +47,8 @@ def install_project_user():
     Disable ssh host checking.
     Create log dir.
     """
+    from .project import project_home
+
     with sudo():
         info('Install application user')
         username = blueprint.get('project')
@@ -39,7 +60,8 @@ def install_project_user():
             debian.groupadd(group, gid_min=10000)
 
         # Get UID for project user
-        user.create_system_user(username, groups=project_user_groups, home=home_path)
+        user.create_system_user(username, groups=project_user_groups,
+                                home=home_path)
 
         # Configure ssh for github
         user.set_strict_host_checking(username, 'github.com')
@@ -53,6 +75,8 @@ def install_project_structure():
     """
     Create project directory structure
     """
+    from .project import app_root
+
     with sudo():
         info('Install application directory structure')
         project_name = blueprint.get('project')
@@ -84,6 +108,8 @@ def install_virtualenv():
     """
     Create a project virtualenv.
     """
+    from .project import sudo_project, virtualenv_path
+
     with sudo():
         virtualenv.install()
 
@@ -95,6 +121,8 @@ def install_requirements():
     """
     Pip install requirements in project virtualenv.
     """
+    from .project import sudo_project, virtualenv_path, requirements_txt
+
     with sudo_project():
         info('Install requirements')
         path = virtualenv_path()
@@ -116,6 +144,8 @@ def install_source():
     """
     Install git and clone application repository.
     """
+    from .project import sudo_project, git_repository, git_root
+
     with sudo():
         git.install()
 
@@ -137,6 +167,8 @@ def update_source():
 
     :return: tuple(previous commit, current commit)
     """
+    from .project import sudo_project, git_repository_path, git_repository
+
     with sudo_project():
         # Get current commit
         path = git_repository_path()

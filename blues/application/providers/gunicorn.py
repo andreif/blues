@@ -6,6 +6,7 @@ from ... import debian
 from ...app import blueprint
 
 from .base import ManagedProvider
+from refabric.utils import info
 
 
 class GunicornProvider(ManagedProvider):
@@ -20,10 +21,8 @@ class GunicornProvider(ManagedProvider):
     def create_socket(self):
         socket = blueprint.get('web.socket')
 
-        if not socket.startswith('unix'):
-            return
-
         parts = urlparse(socket)
+
         if not parts.path:
             path = socket
         else:
@@ -31,6 +30,8 @@ class GunicornProvider(ManagedProvider):
 
         if len(path.split('/')) < 2:
             raise ValueError('socket cannot be placed in /.')
+
+        info('Creating socket for gunicorn: %s' % path)
 
         with sudo():
             debian.mkdir(os.path.dirname(path))
