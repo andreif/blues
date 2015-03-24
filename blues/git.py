@@ -65,10 +65,23 @@ def clone(url, branch=None, repository_path=None, **kwargs):
         repository_path = os.path.join('.', name)
 
     if not files.exists(os.path.join(repository_path, '.git')):
-        info('Cloning {}@{} into {}', url, branch, repository_path)
+        info('Cloning {}@{} into {}',
+             url,
+             branch or '<default>',  # if branch is None
+             repository_path)
+
         with silent('warnings'):
-            cmd = 'git clone -b {branch} {remote} {name}'.format(branch=branch, remote=url, name=name)
+            maybe_branch = ''
+
+            if branch is not None:
+                maybe_branch = ' -b {branch}'.format(branch=branch)
+
+            cmd = 'git clone{maybe_branch} {remote} {name}'.format(
+                maybe_branch=maybe_branch,
+                remote=url,
+                name=name)
             output = run(cmd)
+
         if output.return_code != 0:
             warn('Failed to clone repository "{}", probably permission denied!'.format(name))
             cloned = None
@@ -223,16 +236,45 @@ def current_tag(repository_path=None):
 
 
 def parse_url(url, branch=None):
-    egg = None
+    """
+    Parse a git repository definition to get
 
+    - url
+    - branch
+    - repository name
+    - egg name
+
+    .. note:
+        The git URL has to be in the "Git over SSH" format. HTTP/HTTPS/GIT
+        over HTTP are not accepted.
+
+    :param url: The url to parse
+    :param branch: Optional branch name, overrides branch found in URL.
+    :return: url, name, branch, egg
+    :rtype: dict()
+    """
+    egg = None
+    url = None
+    url_branch = None  # branch found in URL, if found
+
+    # Check to see if @<branch> is in the url.
     if '@' in url.split(':', 1)[-1]:
+        # Split out "@<branch>[...]" from the url.
         url, url_branch = url.rsplit('@', 1)
 
+        # Split out "#egg=<egg>" from url_branch if it is "@<branch>#egg=<egg>"
         if '#' in url_branch:
             url_branch, egg = url_branch.split('#', 1)
 
-        if not branch:
-            branch = url_branch
+    if url is None:
+        raise ValueError('The git URL is NoneType, have you set it correctly?')
+
+    if branch is None:
+        branch = url_branch
+
+    if branch is not None and not branch:
+        raise ValueError('branch is not None, but is falsy, check your '
+                         'git_url or git_branch options.')
 
     repository_name = url.rsplit('/', 1)[-1]
 
