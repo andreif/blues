@@ -114,7 +114,7 @@ def reset(branch, repository_path=None, **kwargs):
 
     with cd(repository_path):
         name = os.path.basename(repository_path)
-        info('Resetting git repository: {}@{}', name, branch)
+        info('Resetting git repository: {}@{}', name, branch or '<default>')
 
         with silent('warnings'):
             commands = [
@@ -122,8 +122,13 @@ def reset(branch, repository_path=None, **kwargs):
                 'git reset --hard HEAD',  # Make hard reset to HEAD
                 'git clean -fdx',  # Remove untracked files pyc, xxx~ etc
                 'git checkout HEAD',  # Checkout HEAD
-                'git reset refs/remotes/origin/{} --hard'.format(branch)  # Reset to branch
             ]
+
+            if branch:
+                # Reset to branch
+                commands.append(
+                    'git reset refs/remotes/origin/{} --hard'.format(branch))
+
             output = run(' && '.join(commands))
 
         if output.return_code != 0:
@@ -254,11 +259,10 @@ def parse_url(url, branch=None):
     :rtype: dict()
     """
     egg = None
-    url = None
     url_branch = None  # branch found in URL, if found
 
     # Check to see if @<branch> is in the url.
-    if '@' in url.split(':', 1)[-1]:
+    if url and '@' in url.split(':', 1)[-1]:
         # Split out "@<branch>[...]" from the url.
         url, url_branch = url.rsplit('@', 1)
 
@@ -266,8 +270,9 @@ def parse_url(url, branch=None):
         if '#' in url_branch:
             url_branch, egg = url_branch.split('#', 1)
 
-    if url is None:
-        raise ValueError('The git URL is NoneType, have you set it correctly?')
+    if url is None or not url:
+        import pdb; pdb.set_trace()
+        raise ValueError('The git URL is not, have you set it correctly?')
 
     if branch is None:
         branch = url_branch
