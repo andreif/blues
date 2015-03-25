@@ -11,7 +11,7 @@ __all__ = [
     'git_repository_path', 'python_path', 'sudo_project', 'requirements_txt'
 ]
 
-blueprint = blueprints.get('app')
+blueprint = blueprints.get('blues.app')
 
 
 app_root = lambda: blueprint.get('root_path') or '/srv/app'  # /srv/app

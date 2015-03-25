@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 
-blueprint = blueprints.get('app')
+blueprint = blueprints.get('blues.app')
 
 
 def install_project():

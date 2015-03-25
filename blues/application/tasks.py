@@ -11,7 +11,7 @@ from refabric.contrib import blueprints
 
 from .. import git
 
-blueprint = blueprints.get('app')
+blueprint = blueprints.get('blues.app')
 
 __all__ = []
 
