@@ -30,7 +30,8 @@ from refabric.contrib import blueprints
 
 from . import debian
 
-__all__ = ['start', 'stop', 'restart', 'reload', 'setup', 'configure', 'enable', 'disable']
+__all__ = ['start', 'stop', 'restart', 'reload', 'setup', 'configure',
+           'enable', 'disable', 'tail']
 
 
 blueprint = blueprints.get(__name__)
@@ -151,3 +152,11 @@ def enable(site, do_reload=True):
                         reload()
 
     return enabled
+
+
+@task
+def tail(log_name='error'):
+    log_dir = '/var/log/nginx'
+    run('tail -f {}'.format(
+        os.path.join(log_dir,
+                     '{}.log'.format(log_name))))

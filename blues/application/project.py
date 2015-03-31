@@ -13,15 +13,29 @@ __all__ = [
 
 blueprint = blueprints.get('blues.app')
 
-
-app_root = lambda: blueprint.get('root_path') or '/srv/app'  # /srv/app
-project_home = lambda: os.path.join(app_root(), blueprint.get('project'))  # /srv/app/project
-git_root = lambda: os.path.join(project_home(), 'src')  # /srv/app/project/src
-virtualenv_path = lambda: os.path.join(project_home(), 'env')  # /srv/app/project/env
-git_repository = lambda: git.parse_url(blueprint.get('git_url'), branch=blueprint.get('git_branch'))  # git repo dict
-git_repository_path = lambda: os.path.join(git_root(), git_repository()['name'])  # /srv/app/project/src/repo.git
-python_path = lambda: os.path.join(git_repository_path(), blueprint.get('git_source', 'src'))  # /srv/app/project/src/repo.git
-requirements_txt = lambda: os.path.join(git_repository_path(), blueprint.get('requirements', 'requirements.txt'))  # /srv/app/project/src/repo.git/requirements.txt
+# /srv/app
+app_root = lambda: blueprint.get('root_path') or '/srv/app'
+# /srv/app/project
+project_home = lambda: os.path.join(app_root(), blueprint.get('project'))
+# /srv/app/project/src
+git_root = lambda: os.path.join(project_home(),
+                                'src')
+# /srv/app/project/env
+virtualenv_path = lambda: os.path.join(project_home(),
+                                       'env')
+# git repo dict
+git_repository = lambda: git.parse_url(blueprint.get('git_url'),
+                                       branch=blueprint.get('git_branch'))
+# /srv/app/project/src/repo.git
+git_repository_path = lambda: os.path.join(git_root(),
+                                           git_repository()['name'])
+# /srv/app/project/src/repo.git
+python_path = lambda: os.path.join(git_repository_path(),
+                                   blueprint.get('git_source', 'src'))
+# /srv/app/project/src/repo.git/requirements.txt
+requirements_txt = lambda: os.path.join(git_repository_path(),
+                                        blueprint.get('requirements',
+                                                      'requirements.txt'))
 project_name = lambda: blueprint.get('project')
 
 

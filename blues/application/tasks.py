@@ -29,11 +29,15 @@ def setup():
     from .deploy import install_project, install_virtualenv, \
         install_requirements, install_providers
 
-    install_project()
-    install_virtualenv()
-    install_requirements()
-    install_providers()
+    use_virtualenv = blueprint.get('use_virtualenv', True)
 
+    install_project()
+
+    if use_virtualenv:
+        install_virtualenv()
+        install_requirements()
+
+    install_providers()
     configure_providers()
 
 
@@ -56,6 +60,8 @@ def deploy(auto_reload=True, force=False):
     from .deploy import update_source, install_requirements
     from .project import git_repository_path
 
+    use_virtualenv = blueprint.get('use_virtualenv', True)
+
     # Reset git repo
     previous_commit, current_commit = update_source()
     code_changed = current_commit is not None and previous_commit != current_commit
@@ -64,20 +70,21 @@ def deploy(auto_reload=True, force=False):
         requirements = blueprint.get('requirements', 'requirements.txt')
         requirements_changed = False
 
-        if not force:
+        if use_virtualenv and not force:
             # Check if requirements has changed
             commit_range = '{}..{}'.format(previous_commit, current_commit)
             requirements_changed, _, _ = git.diff_stat(git_repository_path(),
                                                        commit_range,
                                                        requirements)
 
-        # Install repo requirements.txt
-        info('Install requirements {}', requirements)
-        if requirements_changed or force:
-            install_requirements()
-        else:
-            info(indent('(requirements not changed in {}...skipping)'),
-                 commit_range)
+        if use_virtualenv:
+            # Install repo requirements.txt
+            info('Install requirements {}', requirements)
+            if requirements_changed or force:
+                install_requirements()
+            else:
+                info(indent('(requirements not changed in {}...skipping)'),
+                     commit_range)
 
         if auto_reload:
             reload()

@@ -1,17 +1,19 @@
 import os
 
 from fabric.context_managers import settings
-from fabric.state import env
+
+from refabric.contrib import blueprints
 
 from .base import BaseManager
 from ..project import *
 
 from ... import debian
 from ... import supervisor
-from ...app import blueprint
+
+blueprint = blueprints.get('blues.app')
 
 
-class SupervisorProvider(BaseManager):
+class SupervisorManager(BaseManager):
     name = 'supervisor'
 
     def install(self):

@@ -5,7 +5,7 @@ from ..project import *
 from ... import debian
 from ...app import blueprint
 
-from . import get_manager
+from ..managers import get_manager
 
 
 class BaseProvider(object):
@@ -39,6 +39,8 @@ class BaseProvider(object):
             'current_host': env.host_string
         }
 
+        context.update(get_project_info())
+
         owner = debian.get_user(self.project)
         context.update(owner)  # name, uid, gid, ...
 
@@ -67,6 +69,19 @@ class BaseProvider(object):
         pass
 
 
+def get_project_info():
+    from .. import project
+    return {key: getattr(project, key)()  # Get and call the attribute
+            for key in ['app_root',
+                        'project_home',
+                        'virtualenv_path',
+                        'git_repository',
+                        'git_repository_path',
+                        'python_path',
+                        'requirements_txt',
+                        'project_name']}
+
+
 class ManagedProvider(BaseProvider):
     def __init__(self, manager=None, *args, **kw):
         super(ManagedProvider, self).__init__(*args, **kw)
@@ -78,20 +93,11 @@ class ManagedProvider(BaseProvider):
         if manager is None:
             manager = self.default_manager
 
-        self.manager = get_manager(manager)
+        Manager = get_manager(manager)
 
+        self.manager = Manager()
 
-class BaseManager(BaseProvider):
-    def configure_provider(self, provider, context, program_name=None):
-        """
-        This method is called from providers in order to upload their
-        run configuration to the manager.
-        :param provider: The provider's instance
-        :param context: Template context
-        :param program_name: Optional program name, to avoid collisions if
-        you have multiple instances of the same provider running under the
-        same manager.
-        :return:
-        """
-        raise NotImplementedError('managers usually need to implement a '
-                                  'configure_provider method.')
+    def provision(self):
+        self.manager.configure_provider(self,
+                                        self.get_context(),
+                                        program_name=self.project)

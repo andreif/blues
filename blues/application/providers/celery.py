@@ -2,6 +2,7 @@ from .base import ManagedProvider
 
 
 class CeleryProvider(ManagedProvider):
+    name = 'celery'
     default_manager = 'supervisor'
 
     def configure_web(self):

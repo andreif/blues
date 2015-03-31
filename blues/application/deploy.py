@@ -34,10 +34,20 @@ blueprint = blueprints.get('blues.app')
 
 
 def install_project():
+    create_app_root()
     install_project_user()
     install_project_structure()
     install_system_dependencies()
     install_or_update_source()
+
+
+def create_app_root():
+    from .project import app_root
+
+    with sudo():
+        # Create global apps root
+        root_path = app_root()
+        debian.mkdir(root_path, recursive=True)
 
 
 def install_project_user():
@@ -75,15 +85,12 @@ def install_project_structure():
     """
     Create project directory structure
     """
-    from .project import app_root
 
     with sudo():
         info('Install application directory structure')
         project_name = blueprint.get('project')
 
-        # Create global apps root
-        root_path = app_root()
-        debian.mkdir(root_path)
+        create_app_root()
 
         # Create static web paths
         static_base = os.path.join('/srv/www/', project_name)
@@ -101,6 +108,7 @@ def install_system_dependencies():
         info('Install system dependencies')
         dependencies = blueprint.get('system_dependencies')
         if dependencies:
+            debian.apt_get('update')
             debian.apt_get('install', *dependencies)
 
 
@@ -176,7 +184,9 @@ def update_source():
 
         # Update source from git (reset)
         repository = git_repository()
-        current_commit = git.reset(repository['branch'], repository_path=path)
+        current_commit = git.reset(repository['branch'],
+                                   repository_path=path,
+                                   ignore=blueprint.get('git_force_ignore'))
 
         if current_commit is not None and current_commit != previous_commit:
             info(indent('(new version)'))
@@ -193,4 +203,7 @@ def install_providers():
     host = env.host_string
     providers = get_providers(host)
     for provider in providers.values():
+        if hasattr(provider, 'manager') and provider.manager is not None:
+            provider.manager.install()
+
         provider.install()

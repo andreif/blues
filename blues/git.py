@@ -112,6 +112,8 @@ def reset(branch, repository_path=None, **kwargs):
     if not repository_path:
         repository_path = debian.pwd()
 
+    ignore = kwargs.pop('ignore', None) or []
+
     with cd(repository_path):
         name = os.path.basename(repository_path)
         info('Resetting git repository: {}@{}', name, branch or '<default>')
@@ -120,7 +122,9 @@ def reset(branch, repository_path=None, **kwargs):
             commands = [
                 'git fetch origin',  # Fetch branches and tags
                 'git reset --hard HEAD',  # Make hard reset to HEAD
-                'git clean -fdx',  # Remove untracked files pyc, xxx~ etc
+                # Remove untracked files pyc, xxx~ etc
+                'git clean {} -fdx'.format(' '.join(['-e {}'.format(ign)
+                                                     for ign in ignore])),
                 'git checkout HEAD',  # Checkout HEAD
             ]
 

@@ -3,45 +3,16 @@ from refabric.contrib import blueprints
 blueprint = blueprints.get('app')
 
 
-def get_provider(name):
-    """
-    Get provider instance by name.
-
-    :param name: Provider name (blueprint)
-    :return: <provider>
-    """
-    from .uwsgi import UWSGIProvider
-    from .supervisor import SupervisorProvider
-    from .gunicorn import GunicornProvider
+def list_providers():
     from .celery import CeleryProvider
+    from .uwsgi import UWSGIProvider
+    from .node import NodeProvider
 
-    provider, _, manager = name.partition(':')
-
-    # LEGACY
-    if provider == 'uwsgi':
-        # Special, for now
-        return UWSGIProvider()
-
-    if provider == 'supervisor':
-        provider = 'celery'
-        manager = 'supervisor'
-    # END LEGACY
-
-    if provider == 'celery':
-        return CeleryProvider(manager=manager)
-    elif provider == 'gunicorn':
-        return GunicornProvider(manager=manager)
-    else:
-        raise NotImplementedError('"{}" is not a valid application provider'.format(name))
-
-
-def get_manager(name):
-    from .supervisor import SupervisorProvider as SupervisorManager
-
-    if name == 'supervisor':
-        return SupervisorManager()
-    else:
-        raise NotImplementedError('"{}" is not a valid manager'.format(name))
+    return [
+        CeleryProvider,
+        UWSGIProvider,
+        NodeProvider
+    ]
 
 
 def get_providers(host=None):
@@ -51,6 +22,7 @@ def get_providers(host=None):
     :param host: Provider host filter
     :return: dict(web=<provider>, worker=<provider>)
     """
+    from .. import resolve_runners
     providers = {}
 
     # TODO: TEST! TEST! TEST! NEEDS TESTING!, rewrote host filtering.
@@ -61,7 +33,7 @@ def get_providers(host=None):
     web_provider = blueprint.get('web.provider')
 
     if web_provider:
-        providers[web_provider] = get_provider(web_provider)
+        providers[web_provider] = resolve_runners(web_provider)
 
     # Install worker providers
     worker_hosts = blueprint.get('worker.hosts')
@@ -70,12 +42,17 @@ def get_providers(host=None):
     worker_hosts = filter(lambda x: x, worker_hosts)
     worker_provider = blueprint.get('worker.provider')
 
+    # Set special provider if
     if worker_provider and worker_provider not in providers:
-        providers[worker_provider] = get_provider(worker_provider)
+        providers[worker_provider] = resolve_runners(worker_provider)
 
+    # Set web provider if web_hosts are not set, or if current host is in
+    # web.hosts
     if web_provider and (not web_hosts or host in web_hosts):
         providers['web'] = providers[web_provider]
 
+    # Set worker provider if worker_hosts are not set, or if current host is in
+    # worker.hosts
     if worker_provider and (not worker_hosts or host in worker_hosts):
         providers['worker'] = providers[worker_provider]
 
