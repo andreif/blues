@@ -15,6 +15,10 @@ Application Blueprint
         git_url: git@github.com:foo/bar.git[@branch]  # Git repository to clone
         # git_branch: master                          # Branch to clone, if not specified in `git_url` setting
         # git_source: ./                              # Relative path within repository added to python path (Default: src/)
+        # Do not reset these paths even if they are git-ignored
+        # git_force_ignore:
+        #  - /node_modules
+        #  - /bower_components
 
         # requirements: requirements/live.txt         # Pip requirements file to install (Default: requirements.txt)
         # system_dependencies:                        # List of debian packages to install
@@ -31,8 +35,9 @@ Application Blueprint
           #   - 10.0.0.11
           #   - 10.0.0.12
 
-        worker:                                       # Enable async workers
-          provider: supervisor                        # Set worker provider (uwsgi or supervisor)
+        worker:                                       # Configure worker process
+          # Set worker provider (uwsgi or supervisor)
+          provider: celery:supervisor
           module: foobar.celery                       # Set worker module to load
           # extensions:                               # Optional Worker framework specific extension configuration
           #   beat: 10.0.0.12                         # Celery: Restrict beat service to specific host
