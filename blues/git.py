@@ -136,11 +136,21 @@ def reset(branch, repository_path=None, **kwargs):
             output = run(' && '.join(commands))
 
         if output.return_code != 0:
-            warn('Failed to reset repository "{}", probably permission denied!'.format(name))
+            warn('Failed to reset repository "{}", probably permission denied!'
+                 .format(name))
         else:
-            output = output.split(os.linesep)[-1][len('HEAD is now at '):]
-            commit = output.split()[0]
-            info('HEAD is now at: {}', output)
+            match_commit = re.search(
+                r'(^|\n)HEAD is now at (?P<commit>[0-9a-f]+)'
+                r'\s(?P<subject>.*)\r\n',
+                output)
+
+            if match_commit is None:
+                raise ValueError('Cannot get commit info from output: %r' %
+                                 output)
+
+            commit = match_commit.group('commit')
+            subject = match_commit.group('subject')
+            info('HEAD is now at: {}', ' '.join([commit, subject]))
 
     return commit
 

@@ -1,5 +1,8 @@
 import os
 from urlparse import urlparse
+from blues import python, virtualenv
+from blues.application.project import sudo_project, project_home, \
+    virtualenv_path
 from refabric.context_managers import sudo
 
 from ... import debian
@@ -14,6 +17,9 @@ class GunicornProvider(ManagedProvider):
     default_manager = 'supervisor'
 
     def install(self):
+        with sudo_project(), virtualenv.activate(virtualenv_path()):
+            python.pip('install', 'gunicorn')
+
         self.manager.install()
 
         self.create_socket()

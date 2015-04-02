@@ -7,11 +7,15 @@ def list_providers():
     from .celery import CeleryProvider
     from .uwsgi import UWSGIProvider
     from .node import NodeProvider
+    from .gunicorn import GunicornProvider
+    from .program import ProgramProvider
 
     return [
         CeleryProvider,
         UWSGIProvider,
-        NodeProvider
+        NodeProvider,
+        GunicornProvider,
+        ProgramProvider
     ]
 
 
