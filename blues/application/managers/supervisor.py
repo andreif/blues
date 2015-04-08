@@ -40,7 +40,7 @@ class SupervisorManager(BaseManager):
         context.update({'program_name': program_name})
 
         destination = self.get_config_path()
-        template = os.path.join(provider.name, self.name, provider.name)
+        template = self.get_provisioning_template(provider, program_name)
         default_templates = supervisor.blueprint.get_default_template_root()
 
         with settings(template_dirs=[default_templates]):

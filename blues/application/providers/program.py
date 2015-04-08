@@ -9,7 +9,7 @@ class ProgramProvider(ManagedProvider):
     default_manager = 'supervisor'
 
     def install(self):
-        self.manager.install()
+        pass
 
     def configure_web(self):
         return self.configure()
@@ -18,6 +18,6 @@ class ProgramProvider(ManagedProvider):
         return self.configure()
 
     def configure(self):
-        return self.manager.configure(self,
-                                      self.get_context(),
-                                      program_name=self.project)
+        return self.manager.configure_provider(self,
+                                               self.get_context(),
+                                               program_name=self.project)

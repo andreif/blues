@@ -9,6 +9,7 @@ from ...app import blueprint
 from . import get_manager
 
 from refabric.contrib import blueprints
+from refabric.utils import info
 
 blueprint = blueprints.get('blues.app')
 
@@ -60,6 +61,7 @@ class BaseManager(object):
             user_templates = blueprint.get_user_template_path()
 
             if os.path.isfile(os.path.join(user_templates, named_template)):
+                info('Using local {} from {}', named_template, user_templates)
                 return named_template
 
         return default_template

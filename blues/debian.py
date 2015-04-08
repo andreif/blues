@@ -114,7 +114,6 @@ def lbs_codename():
 
 
 def apt_get(command, *options):
-    print repr(options)
     options = ' '.join(options) if options else ''
 
     return run('apt-get --yes {} {}'.format(command, options))

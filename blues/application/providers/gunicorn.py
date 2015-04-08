@@ -55,7 +55,7 @@ class GunicornProvider(ManagedProvider):
         bp = {
             'socket': socket,
             'workers': blueprint.get('web.workers', debian.nproc() * 2),
-            'module': blueprint.get('web.module')
+            'module': blueprint.get('web.module'),
         }
 
         context.update(bp)

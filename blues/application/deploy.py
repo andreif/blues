@@ -3,8 +3,10 @@ import os
 from fabric.context_managers import cd
 from fabric.state import env
 from fabric.utils import indent, abort
+from blues.application.project import git_repository_path
 
 from refabric.context_managers import sudo
+from refabric.operations import run
 from refabric.utils import info
 from refabric.contrib import blueprints
 
@@ -132,11 +134,23 @@ def install_requirements():
     from .project import sudo_project, virtualenv_path, requirements_txt
 
     with sudo_project():
-        info('Install requirements')
         path = virtualenv_path()
-        requirements = requirements_txt()
+
+        installation_method = blueprint.get('installation_method',
+                                            'requirements.txt')
+        info('Install requirements using method {}', installation_method)
+
         with virtualenv.activate(path):
-            python.pip('install', '-r', requirements)
+            if installation_method == 'requirements.txt':
+                requirements = requirements_txt()
+                python.pip('install', '-r', requirements)
+            elif installation_method == 'setup.py':
+                with cd(git_repository_path()):
+                    run('python setup.py install')
+            else:
+                raise ValueError(
+                    '"{}" is not a valid installation method '.format(
+                        installation_method))
 
 
 def install_or_update_source():

@@ -36,7 +36,7 @@ class BaseProvider(object):
         context = {
             'chdir': python_path(),
             'virtualenv': virtualenv_path(),
-            'current_host': env.host_string
+            'current_host': env.host_string,
         }
 
         context.update(get_project_info())
