@@ -139,9 +139,10 @@ def reset(branch, repository_path=None, **kwargs):
             warn('Failed to reset repository "{}", probably permission denied!'
                  .format(name))
         else:
+            output = run('git show --oneline -s --color=never | cat')
             match_commit = re.search(
-                r'(^|\n)HEAD is now at (?P<commit>[0-9a-f]+)'
-                r'\s(?P<subject>.*)\r\n',
+                r'(^|\n)(?P<commit>[0-9a-f]+)'
+                r'\s(?P<subject>.*)(\r|\n|$)',
                 output)
 
             if match_commit is None:
@@ -152,7 +153,10 @@ def reset(branch, repository_path=None, **kwargs):
             subject = match_commit.group('subject')
             info('HEAD is now at: {}', ' '.join([commit, subject]))
 
-    return commit
+            return commit
+
+    raise RuntimeError('Something went wrong before this commit.'
+                       ' This path is not accounted for')
 
 
 def get_commit(repository_path=None, short=False):
