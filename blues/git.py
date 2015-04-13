@@ -138,7 +138,7 @@ def reset(branch, repository_path=None, **kwargs):
         else:
             # Pipe through cat in order to suppress non-text output from
             # git-show.
-            output = run('git show --oneline -s --color=never | cat')
+            output = run('git show --oneline -s | cat')
             match_commit = re.search(
                 r'(^|\n)(?P<commit>[0-9a-f]+)'
                 r'\s(?P<subject>.*)(\r|\n|$)',
