@@ -105,10 +105,8 @@ def reset(branch, repository_path=None, **kwargs):
     """
     Fetch, reset, clean and checkout repository branch.
 
-    :return: commit
+    :return: commit short hash or None
     """
-    commit = None
-
     if not repository_path:
         repository_path = debian.pwd()
 
@@ -126,12 +124,11 @@ def reset(branch, repository_path=None, **kwargs):
                 'git clean {} -fdx'.format(' '.join(['-e {}'.format(ign)
                                                      for ign in ignore])),
                 'git checkout HEAD',  # Checkout HEAD
+                # Reset to the tip of remote branch, or the tip of the remote
+                # repository in case of no specified branch.
+                'git reset refs/remotes/origin/{} --hard'.format(
+                    branch or 'HEAD'),
             ]
-
-            if branch:
-                # Reset to branch
-                commands.append(
-                    'git reset refs/remotes/origin/{} --hard'.format(branch))
 
             output = run(' && '.join(commands))
 
@@ -139,6 +136,8 @@ def reset(branch, repository_path=None, **kwargs):
             warn('Failed to reset repository "{}", probably permission denied!'
                  .format(name))
         else:
+            # Pipe through cat in order to suppress non-text output from
+            # git-show.
             output = run('git show --oneline -s --color=never | cat')
             match_commit = re.search(
                 r'(^|\n)(?P<commit>[0-9a-f]+)'
@@ -154,9 +153,6 @@ def reset(branch, repository_path=None, **kwargs):
             info('HEAD is now at: {}', ' '.join([commit, subject]))
 
             return commit
-
-    raise RuntimeError('Something went wrong before this commit.'
-                       ' This path is not accounted for')
 
 
 def get_commit(repository_path=None, short=False):
