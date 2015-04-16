@@ -28,6 +28,7 @@ def setup():
     """
     from .deploy import install_project, install_virtualenv, \
         install_requirements, install_providers
+    from .project import requirements_txt
 
     use_virtualenv = blueprint.get('use_virtualenv', True)
 
@@ -35,7 +36,7 @@ def setup():
 
     if use_virtualenv:
         install_virtualenv()
-        install_requirements()
+        install_requirements(requirements_txt())
 
     install_providers()
     configure_providers()
@@ -58,31 +59,34 @@ def deploy(auto_reload=True, force=False):
     :return: Got new source?
     """
     from .deploy import update_source, install_requirements
-    from .project import git_repository_path
+    from .project import git_repository_path, requirements_txt
 
-    use_virtualenv = blueprint.get('use_virtualenv', True)
+    use_python = blueprint.get('use_python', True)
 
     # Reset git repo
     previous_commit, current_commit = update_source()
-    code_changed = current_commit is not None and\
+    code_changed = current_commit is not None and \
                    previous_commit != current_commit
 
     if code_changed or force:
-        requirements = blueprint.get('requirements', 'requirements.txt')
-        requirements_changed = False
+        # May be requirements.txt, setup.py, or other
+        installation_file = requirements_txt()
 
-        if use_virtualenv and not force:
-            # Check if requirements has changed
-            commit_range = '{}..{}'.format(previous_commit, current_commit)
-            requirements_changed, _, _ = git.diff_stat(git_repository_path(),
-                                                       commit_range,
-                                                       requirements)
+        installation_file_changed = False
 
-        if use_virtualenv:
+        if use_python:
+            if not force:
+                # Check if installation_file has changed
+                commit_range = '{}..{}'.format(previous_commit, current_commit)
+                installation_file_changed, _, _ = git.diff_stat(
+                    git_repository_path(),
+                    commit_range,
+                    installation_file)
+
             # Install repo requirements.txt
-            info('Install requirements {}', requirements)
-            if requirements_changed or force:
-                install_requirements()
+            info('Install requirements {}', installation_file)
+            if installation_file_changed or force:
+                install_requirements(installation_file)
             else:
                 info(indent('(requirements not changed in {}...skipping)'),
                      commit_range)

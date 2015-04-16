@@ -127,7 +127,7 @@ def install_virtualenv():
         virtualenv.create(virtualenv_path())
 
 
-def install_requirements():
+def install_requirements(installation_file):
     """
     Pip install requirements in project virtualenv.
     """
@@ -136,21 +136,19 @@ def install_requirements():
     with sudo_project():
         path = virtualenv_path()
 
-        installation_method = blueprint.get('installation_method',
-                                            'requirements.txt')
-        info('Install requirements using method {}', installation_method)
+        info('Installing requirements from file {}', installation_file)
 
         with virtualenv.activate(path):
-            if installation_method == 'requirements.txt':
-                requirements = requirements_txt()
-                python.pip('install', '-r', requirements)
-            elif installation_method == 'setup.py':
+            if installation_file.endswith('.txt') or \
+                    installation_file.endswith('.pip'):
+                python.pip('install', '-r', installation_file)
+            elif installation_file.endswith('.py'):
                 with cd(git_repository_path()):
-                    run('python setup.py install')
+                    run('python {} develop'.format(installation_file))
             else:
                 raise ValueError(
-                    '"{}" is not a valid installation method '.format(
-                        installation_method))
+                    '"{}" is not a valid installation file'.format(
+                        installation_file))
 
 
 def install_or_update_source():
