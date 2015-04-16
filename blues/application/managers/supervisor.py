@@ -56,5 +56,5 @@ class SupervisorManager(BaseManager):
 
         return self.updates
 
-    def reload(self):
-        supervisor.reload()
+    def reload(self, program=None):
+        supervisor.reload(program)

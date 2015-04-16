@@ -11,6 +11,9 @@ class ProgramProvider(ManagedProvider):
     def install(self):
         pass
 
+    def reload(self):
+        self.manager.reload(self.project)
+
     def configure_web(self):
         return self.configure()
 
